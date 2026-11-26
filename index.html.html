@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PEPSI | Más que una bebida, una experiencia</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter y Montserrat Black para titulares tipo Pepsi -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:ital,wght@0,800;0,900;1,900&display=swap" rel="stylesheet" />
+  <!-- Tone.js para efectos de sonido sintetizados sin depender de audios externos -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Montserrat', 'sans-serif'],
+          },
+          colors: {
+            pepsiDark: '#001B44',
+            pepsiBlue: '#004B93',
+            pepsiElectric: '#0066CC',
+            pepsiRed: '#E32934',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Estilos personalizados y animaciones */
+    body {
+      background-color: #001230;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    .bg-pepsi-radial {
+      background: radial-gradient(circle at 75% 30%, #0066CC 0%, #00357A 42%, #001538 85%, #000D24 100%);
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 12px 32px rgba(0, 10, 30, 0.45);
+    }
+
+    .glass-card-hover {
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .glass-card-hover:hover {
+      transform: translateY(-6px);
+      border-color: rgba(0, 136, 255, 0.6);
+      box-shadow: 0 18px 40px rgba(0, 102, 204, 0.35);
+    }
+
+    /* Burbujas animadas de fondo */
+    .bubble {
+      position: absolute;
+      bottom: -40px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(0, 153, 255, 0.15));
+      pointer-events: none;
+      animation: rise linear infinite;
+    }
+
+    @keyframes rise {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.65;
+      }
+      85% {
+        opacity: 0.45;
+      }
+      100% {
+        transform: translateY(-105vh) scale(1.25);
+        opacity: 0;
+      }
+    }
+
+    /* Flotación suave para lata/esfera hero */
+    @keyframes floatSlow {
+      0%, 100% {
+        transform: translateY(0px) rotate(-4deg);
+      }
+      50% {
+        transform: translateY(-14px) rotate(-2deg);
+      }
+    }
+
+    .animate-float {
+      animation: floatSlow 5s ease-in-out infinite;
+    }
+
+    /* Estilo del Canvas del juego */
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-pepsiRed selection:text-white">
+
+  <!-- =========================================================
+       1. NAVEGACIÓN SUPERIOR FIJA (NAVBAR)
+       ========================================================= -->
+  <header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-[#001230]/80 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 md:h-20">
+        <!-- Logo Vectorial Oficial Pepsi -->
+        <a href="#inicio" class="flex items-center gap-3 group focus:outline-none">
+          <svg class="w-10 h-10 md:w-11 md:h-11 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Logo Pepsi">
+            <circle cx="50" cy="50" r="47" fill="#FFFFFF" />
+            <!-- Mitad superior roja -->
+            <path d="M50 7C26.25 7 7 26.25 7 50C7 53.6 7.45 57.08 8.28 60.41C35.2 54.6 62.5 36.8 75.8 15.6C68.5 10.2 59.6 7 50 7Z" fill="#E32934" />
+            <!-- Mitad inferior azul -->
+            <path d="M84.6 24.4C74.5 47.9 47.2 65.1 13.7 72.1C21.1 84.6 34.6 93 50 93C73.75 93 93 73.75 93 50C93 40.3 89.8 31.4 84.6 24.4Z" fill="#004B93" />
+          </svg>
+          <span class="font-display font-black italic text-xl md:text-2xl tracking-wider text-white">PEPSI</span>
+        </a>
+
+        <!-- Enlaces Desktop -->
+        <nav class="hidden lg:flex items-center gap-7 text-sm font-semibold text-blue-100">
+          <a href="#inicio" class="hover:text-white transition-colors py-1 border-b-2 border-transparent hover:border-pepsiRed">Inicio</a>
+          <a href="#historia" class="hover:text-white transition-colors py-1 border-b-2 border-transparent hover:border-pepsiRed">Historia</a>
+          <a href="#pepsiman" class="hover:text-white transition-colors py-1 border-b-2 border-transparent hover:border-pepsiRed">Pepsiman</a>
+          <a href="#arcade" class="px-4 py-2 rounded-full bg-pepsiElectric hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-600/30 transition-all">Pepsi Arcade</a>
+          <a href="#comparativa" class="hover:text-white transition-colors py-1 border-b-2 border-transparent hover:border-pepsiRed">Comparativa</a>
+          <a href="#impacto" class="hover:text-white transition-colors py-1 border-b-2 border-transparent hover:border-pepsiRed">Impacto</a>
+          <a href="#fuentes" class="hover:text-white transition-colors py-1 border-b-2 border-transparent hover:border-pepsiRed">Fuentes</a>
+        </nav>
+
+        <!-- Botón Menú Móvil -->
+        <button id="mobileMenuBtn" class="lg:hidden p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white focus:outline-none" aria-label="Abrir menú">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Menú Desplegable Móvil -->
+    <div id="mobileMenu" class="hidden lg:hidden bg-[#001538]/95 backdrop-blur-xl border-b border-white/10 px-4 pt-3 pb-6 space-y-2">
+      <a href="#inicio" class="mobile-link block px-4 py-2.5 rounded-xl hover:bg-white/10 font-medium">Inicio</a>
+      <a href="#historia" class="mobile-link block px-4 py-2.5 rounded-xl hover:bg-white/10 font-medium">Historia y Evolución</a>
+      <a href="#pepsiman" class="mobile-link block px-4 py-2.5 rounded-xl hover:bg-white/10 font-medium">Pepsiman (1999)</a>
+      <a href="#arcade" class="mobile-link block px-4 py-2.5 rounded-xl bg-pepsiElectric text-white font-bold">🎮 Jugar Pepsi Arcade</a>
+      <a href="#comparativa" class="mobile-link block px-4 py-2.5 rounded-xl hover:bg-white/10 font-medium">Comparativa</a>
+      <a href="#impacto" class="mobile-link block px-4 py-2.5 rounded-xl hover:bg-white/10 font-medium">Impacto y Conclusión</a>
+      <a href="#fuentes" class="mobile-link block px-4 py-2.5 rounded-xl hover:bg-white/10 font-medium">Fuentes</a>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       2. SECCIÓN HERO (INICIO)
+       ========================================================= -->
+  <section id="inicio" class="relative min-h-screen flex items-center pt-24 pb-16 bg-pepsi-radial overflow-hidden">
+    <!-- Contenedor dinámico de burbujas -->
+    <div id="bubblesContainer" class="absolute inset-0 overflow-hidden pointer-events-none"></div>
+
+    <!-- Ondas decorativas inferiores estilo presentación -->
+    <svg class="absolute bottom-0 left-0 w-full h-24 md:h-36 pointer-events-none opacity-90" viewBox="0 0 1440 160" preserveAspectRatio="none">
+      <path d="M0,60 C360,150 720,0 1440,90 L1440,160 L0,160 Z" fill="#004B93" />
+      <path d="M0,100 C480,20 960,150 1440,70 L1440,160 L0,160 Z" fill="#E32934" opacity="0.85" />
+      <path d="M0,130 C520,85 1020,165 1440,115 L1440,160 L0,160 Z" fill="#001230" />
+    </svg>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <!-- Columna de Texto -->
+        <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs sm:text-sm font-semibold tracking-wider uppercase text-blue-200">
+            <span class="w-2 h-2 rounded-full bg-pepsiRed animate-ping"></span>
+            Presentación Interactiva • Live For Now
+          </div>
+
+          <h1 class="font-display font-black italic text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight leading-none text-white drop-shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
+            PEPSI
+          </h1>
+
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white leading-tight">
+            Más que una bebida, <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-white to-red-400">una experiencia.</span>
+          </h2>
+
+          <p class="text-base sm:text-lg md:text-xl font-medium text-blue-200 tracking-wide">
+            Historia <span class="text-pepsiRed mx-1">•</span> Innovación <span class="text-pepsiRed mx-1">•</span> Pepsiman <span class="text-pepsiRed mx-1">•</span> Pepsi Arcade
+          </p>
+
+          <div class="pt-3 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <a href="#historia" class="w-full sm:w-auto px-8 py-4 rounded-full bg-pepsiElectric hover:bg-blue-500 text-white font-bold text-base sm:text-lg shadow-xl shadow-blue-600/40 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+              <span>Explora el mundo Pepsi</span>
+              <span class="text-xl">↓</span>
+            </a>
+            <a href="#arcade" class="w-full sm:w-auto px-8 py-4 rounded-full bg-pepsiRed hover:bg-red-500 text-white font-bold text-base sm:text-lg shadow-xl shadow-red-600/35 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+              <span>🎮 Jugar Pepsi Arcade</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Columna Visual: Lata 3D Vectorial Refrescante -->
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="relative w-64 sm:w-72 md:w-80 animate-float">
+            <!-- Resplandor detrás de la lata -->
+            <div class="absolute inset-4 rounded-full bg-sky-400/30 blur-3xl"></div>
+            <!-- Ilustración SVG de Lata Pepsi con gotas y destellos -->
+            <svg viewBox="0 0 320 460" class="w-full h-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.65)]" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="canBody" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#002663" />
+                  <stop offset="25%" stop-color="#0066CC" />
+                  <stop offset="50%" stop-color="#1E88E5" />
+                  <stop offset="80%" stop-color="#004B93" />
+                  <stop offset="100%" stop-color="#001A45" />
+                </linearGradient>
+                <linearGradient id="metalRim" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#94A3B8" />
+                  <stop offset="35%" stop-color="#F8FAFC" />
+                  <stop offset="70%" stop-color="#CBD5E1" />
+                  <stop offset="100%" stop-color="#64748B" />
+                </linearGradient>
+              </defs>
+
+              <!-- Tapa superior metálica -->
+              <path d="M75 52 C75 36, 245 36, 245 52 L252 68 C252 80, 68 80, 68 68 Z" fill="url(#metalRim)" />
+              <ellipse cx="160" cy="50" rx="82" ry="12" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2" />
+
+              <!-- Cuerpo principal de la lata -->
+              <path d="M68 68 L252 68 L252 392 C252 406, 236 418, 224 422 L96 422 C84 418, 68 406, 68 392 Z" fill="url(#canBody)" />
+
+              <!-- Base metálica inferior -->
+              <path d="M92 420 L228 420 L220 432 C205 438, 115 438, 100 432 Z" fill="url(#metalRim)" />
+
+              <!-- Reflejo vertical brillante -->
+              <rect x="92" y="72" width="18" height="340" rx="9" fill="#FFFFFF" opacity="0.16" />
+
+              <!-- Esfera Pepsi central en la lata -->
+              <g transform="translate(160, 215)">
+                <circle cx="0" cy="0" r="68" fill="#FFFFFF" />
+                <path d="M0 -63 C-34.8 -63 -63 -34.8 -63 0 C-63 5.2 -62.3 10.3 -61.1 15.2 C-21.6 6.7 18.3 -19.3 37.8 -50.4 C27.1 -58.3 14.1 -63 0 -63 Z" fill="#E32934" />
+                <path d="M50.7 -37.5 C35.9 -3.1 -4.1 22.1 -53.2 32.3 C-42.3 50.6 -22.5 63 0 63 C34.8 63 63 34.8 63 0 C63 -14.2 58.3 -27.2 50.7 -37.5 Z" fill="#004B93" />
+              </g>
+
+              <!-- Tipografía PEPSI en la lata -->
+              <text x="160" y="332" text-anchor="middle" fill="#FFFFFF" font-family="Montserrat, sans-serif" font-weight="800" font-size="38" letter-spacing="2">pepsi</text>
+
+              <!-- Gotas de condensación -->
+              <circle cx="88" cy="145" r="4" fill="#BAE6FD" opacity="0.8" />
+              <circle cx="232" cy="168" r="5" fill="#BAE6FD" opacity="0.75" />
+              <circle cx="105" cy="285" r="3.5" fill="#FFFFFF" opacity="0.7" />
+              <circle cx="224" cy="310" r="4.5" fill="#BAE6FD" opacity="0.8" />
+              <circle cx="145" cy="112" r="3" fill="#FFFFFF" opacity="0.85" />
+              <circle cx="195" cy="365" r="3.5" fill="#BAE6FD" opacity="0.75" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       3. SECCIÓN HISTORIA Y EVOLUCIÓN
+       ========================================================= -->
+  <section id="historia" class="py-20 md:py-28 bg-[#001230] relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Encabezado de Sección -->
+      <div class="max-w-3xl mb-14">
+        <div class="w-16 h-1.5 bg-pepsiRed rounded-full mb-4"></div>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4">
+          Historia y Evolución de Pepsi
+        </h2>
+        <p class="text-lg text-blue-200 leading-relaxed">
+          Un viaje de más de 130 años desde una farmacia en Carolina del Norte hasta convertirse en un ícono mundial de bebidas, alimentos y cultura pop.
+        </p>
+      </div>
+
+      <!-- Línea de Tiempo Interactiva (4 Hitos Principales) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+        <!-- Hito 1: 1893 -->
+        <article class="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <span class="inline-block px-4 py-1 rounded-full bg-pepsiRed text-white font-extrabold text-sm mb-4 shadow-md">
+              28 de agosto, 1893
+            </span>
+            <h3 class="text-xl font-bold text-white mb-2">El Nacimiento: "Brad's Drink"</h3>
+            <p class="text-blue-200 text-sm leading-relaxed">
+              En New Bern, Carolina del Norte (EE.UU.), el farmacéutico <strong class="text-white">Caleb Bradham</strong> crea una bebida refrescante y digestiva llamada originalmente <em>"Brad's Drink"</em>.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-white/10 text-xs text-sky-300 font-semibold">
+            📍 New Bern, Carolina del Norte
+          </div>
+        </article>
+
+        <!-- Hito 2: 1898 -->
+        <article class="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <span class="inline-block px-4 py-1 rounded-full bg-pepsiElectric text-white font-extrabold text-sm mb-4 shadow-md">
+              1898
+            </span>
+            <h3 class="text-xl font-bold text-white mb-2">Nace Pepsi-Cola</h3>
+            <p class="text-blue-200 text-sm leading-relaxed">
+              La fórmula es renombrada oficialmente como <strong class="text-white">Pepsi-Cola</strong>. Desde entonces, comenzó una expansión imparable hasta ser una de las marcas más queridas del planeta.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-white/10 text-xs text-sky-300 font-semibold">
+            🏷️ Identidad oficial registrada
+          </div>
+        </article>
+
+        <!-- Hito 3: 1965 -->
+        <article class="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <span class="inline-block px-4 py-1 rounded-full bg-pepsiElectric text-white font-extrabold text-sm mb-4 shadow-md">
+              1965
+            </span>
+            <h3 class="text-xl font-bold text-white mb-2">PepsiCo: Un Gigante Global</h3>
+            <p class="text-blue-200 text-sm leading-relaxed mb-3">
+              Pepsi se fusiona con <strong class="text-white">Frito-Lay</strong> formando <strong class="text-white">PepsiCo</strong>, liderando el mercado global con marcas icónicas:
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-semibold text-white">Lay's</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-semibold text-white">Doritos</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-semibold text-white">Tostitos</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-semibold text-white">Gatorade</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-semibold text-white">Tropicana</span>
+            </div>
+          </div>
+          <div class="mt-6 pt-4 border-t border-white/10 text-xs text-sky-300 font-semibold">
+            🌎 Alimentos y Bebidas Mundiales
+          </div>
+        </article>
+
+        <!-- Hito 4: Hoy -->
+        <article class="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between bg-gradient-to-br from-pepsiBlue/40 to-pepsiDark/80">
+          <div>
+            <span class="inline-block px-4 py-1 rounded-full bg-pepsiRed text-white font-extrabold text-sm mb-4 shadow-md">
+              Actualidad
+            </span>
+            <h3 class="text-xl font-bold text-white mb-2">Presencia Internacional</h3>
+            <p class="text-blue-200 text-sm leading-relaxed">
+              Hoy Pepsi lleva refresco, innovación y alegría a millones de consumidores en cada continente con un portafolio diverso de refrescos, aguas y snacks.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-white/10 text-xs text-sky-300 font-semibold">
+            🚀 +130 años de historia viva
+          </div>
+        </article>
+      </div>
+
+      <!-- Contadores Visuales Destacados ("Una marca global") -->
+      <div class="rounded-3xl bg-gradient-to-r from-pepsiRed via-[#C81E2B] to-pepsiRed p-8 md:p-10 shadow-2xl mb-20">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-white/25">
+          <div class="pt-4 md:pt-0">
+            <div class="text-4xl sm:text-5xl font-display font-black text-white mb-1">+200</div>
+            <div class="text-base sm:text-lg font-semibold text-red-100 uppercase tracking-wider">Países con presencia</div>
+          </div>
+          <div class="pt-6 md:pt-0">
+            <div class="text-4xl sm:text-5xl font-display font-black text-white mb-1">+1.000</div>
+            <div class="text-base sm:text-lg font-semibold text-red-100 uppercase tracking-wider">Productos en el mundo</div>
+          </div>
+          <div class="pt-6 md:pt-0">
+            <div class="text-4xl sm:text-5xl font-display font-black text-white mb-1">+100.000</div>
+            <div class="text-base sm:text-lg font-semibold text-red-100 uppercase tracking-wider">Empleados globales</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evolución Visual del Logotipo (SVG Limpios) -->
+      <div class="glass-card rounded-3xl p-8 md:p-10 mb-16">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Evolución del Logotipo</h3>
+          <p class="text-blue-200 text-sm sm:text-base">Un símbolo que ha sabido reinventarse en cada generación manteniendo su esencia.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 items-center">
+          <!-- Logo 1898 -->
+          <div class="flex flex-col items-center text-center p-5 rounded-2xl bg-white/5 border border-white/10">
+            <div class="h-28 flex items-center justify-center mb-4">
+              <svg viewBox="0 0 220 110" class="w-44 h-auto">
+                <ellipse cx="110" cy="55" rx="95" ry="42" fill="#FFFFFF" stroke="#E32934" stroke-width="5" />
+                <text x="110" y="63" text-anchor="middle" fill="#E32934" font-family="Georgia, serif" font-style="italic" font-weight="bold" font-size="27">Pepsi-Cola</text>
+              </svg>
+            </div>
+            <span class="px-4 py-1 rounded-full bg-white/10 text-white font-bold text-sm">1898</span>
+            <p class="text-xs text-blue-200 mt-2">Caligrafía clásica original</p>
+          </div>
+
+          <!-- Logo 1940 -->
+          <div class="flex flex-col items-center text-center p-5 rounded-2xl bg-white/5 border border-white/10">
+            <div class="h-28 flex items-center justify-center mb-4">
+              <svg viewBox="0 0 220 110" class="w-44 h-auto">
+                <circle cx="110" cy="55" r="46" fill="#FFFFFF" />
+                <path d="M110 12 A43 43 0 0 1 151 42 L69 42 A43 43 0 0 1 110 12 Z" fill="#E32934" />
+                <path d="M69 68 L151 68 A43 43 0 0 1 69 68 Z" fill="#004B93" />
+                <text x="110" y="61" text-anchor="middle" fill="#E32934" font-family="Georgia, serif" font-style="italic" font-weight="bold" font-size="22">Pepsi-Cola</text>
+              </svg>
+            </div>
+            <span class="px-4 py-1 rounded-full bg-white/10 text-white font-bold text-sm">1940</span>
+            <p class="text-xs text-blue-200 mt-2">Tapa corona tricolor</p>
+          </div>
+
+          <!-- Logo 1962 -->
+          <div class="flex flex-col items-center text-center p-5 rounded-2xl bg-white/5 border border-white/10">
+            <div class="h-28 flex items-center justify-center mb-4">
+              <svg viewBox="0 0 120 120" class="w-24 h-24">
+                <circle cx="60" cy="60" r="54" fill="#FFFFFF" />
+                <path d="M60 10 C32.4 10 10 32.4 10 60 C10 62 10.1 64 10.4 66 C42 54 78 54 109.6 66 C109.9 64 110 62 110 60 C110 32.4 87.6 10 60 10 Z" fill="#E32934" />
+                <path d="M12.5 75 C18.8 95.3 37.7 110 60 110 C82.3 110 101.2 95.3 107.5 75 C77 64 43 64 12.5 75 Z" fill="#004B93" />
+              </svg>
+            </div>
+            <span class="px-4 py-1 rounded-full bg-white/10 text-white font-bold text-sm">1962</span>
+            <p class="text-xs text-blue-200 mt-2">Nace la esfera moderna</p>
+          </div>
+
+          <!-- Logo Actualidad -->
+          <div class="flex flex-col items-center text-center p-5 rounded-2xl bg-pepsiElectric/20 border border-sky-400/40">
+            <div class="h-28 flex flex-col items-center justify-center mb-4">
+              <svg viewBox="0 0 100 100" class="w-20 h-20">
+                <circle cx="50" cy="50" r="47" fill="#FFFFFF" />
+                <path d="M50 7C26.25 7 7 26.25 7 50C7 53.6 7.45 57.08 8.28 60.41C35.2 54.6 62.5 36.8 75.8 15.6C68.5 10.2 59.6 7 50 7Z" fill="#E32934" />
+                <path d="M84.6 24.4C74.5 47.9 47.2 65.1 13.7 72.1C21.1 84.6 34.6 93 50 93C73.75 93 93 73.75 93 50C93 40.3 89.8 31.4 84.6 24.4Z" fill="#004B93" />
+              </svg>
+              <span class="font-display font-extrabold text-white text-lg tracking-wide mt-1">pepsi</span>
+            </div>
+            <span class="px-4 py-1 rounded-full bg-pepsiElectric text-white font-bold text-sm">Actualidad</span>
+            <p class="text-xs text-sky-200 mt-2">Minimalismo dinámico</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marketing e Identidad -->
+      <div class="glass-card rounded-3xl p-8 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-7 space-y-4">
+          <span class="text-xs font-bold uppercase tracking-widest text-pepsiRed">Marketing e Identidad</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-white">Estrategias que conectan con cada generación</h3>
+          <p class="text-blue-200 leading-relaxed">
+            Pepsi destaca mundialmente por su innovación constante, su vínculo con la música, el deporte y un estilo de vida joven y dinámico.
+          </p>
+          <ul class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <li class="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2.5 text-sm font-semibold">
+              <span class="text-emerald-400 font-bold">✔</span> "Pepsi Generation"
+            </li>
+            <li class="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2.5 text-sm font-semibold">
+              <span class="text-emerald-400 font-bold">✔</span> "Live for Now"
+            </li>
+            <li class="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2.5 text-sm font-semibold">
+              <span class="text-emerald-400 font-bold">✔</span> Música y Deporte
+            </li>
+          </ul>
+        </div>
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="px-8 py-6 rounded-3xl bg-gradient-to-br from-pepsiElectric to-pepsiDark border border-white/20 text-center shadow-xl">
+            <div class="text-xs uppercase tracking-widest text-sky-200 mb-1">Eslogan Icónico</div>
+            <div class="font-display font-black italic text-3xl sm:text-4xl text-white tracking-tight">
+              LIVE FOR N<span class="inline-block w-7 h-7 mx-0.5 align-middle rounded-full bg-gradient-to-tr from-pepsiBlue via-white to-pepsiRed border-2 border-white"></span>W
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       4. SECCIÓN PEPSIMAN (1999)
+       ========================================================= -->
+  <section id="pepsiman" class="py-20 md:py-28 bg-gradient-to-b from-[#001230] via-[#00235B] to-[#001230] relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Ficha Técnica e Historia del Héroe Azul -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="w-16 h-1.5 bg-pepsiRed rounded-full"></div>
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-sky-300 text-xs font-bold uppercase tracking-wider">
+            🎮 Clásico de PlayStation • 1999
+          </div>
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight">
+            Pepsiman: El Héroe Azul
+          </h2>
+          <p class="text-blue-100 text-base sm:text-lg leading-relaxed">
+            En 1999, Pepsi lanzó un videojuego icónico para <strong class="text-white">PlayStation</strong>: <em>Pepsiman</em>. Un superhéroe plateado y azul, ágil y carismático, que corría a toda velocidad por las calles para salvar el día... ¡y entregar refrescantes latas de Pepsi!
+          </p>
+
+          <!-- Tarjetas de Ficha Técnica -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-sky-300 font-semibold mb-1">Género</div>
+              <div class="text-sm sm:text-base font-bold text-white">Acción / Carreras</div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-sky-300 font-semibold mb-1">Desarrollador</div>
+              <div class="text-sm sm:text-base font-bold text-white">KID</div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-sky-300 font-semibold mb-1">Plataforma</div>
+              <div class="text-sm sm:text-base font-bold text-white">PlayStation</div>
+            </div>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="text-xs text-sky-300 font-semibold mb-1">Lanzamiento</div>
+              <div class="text-sm sm:text-base font-bold text-white">4 Mar 1999</div>
+            </div>
+          </div>
+
+          <!-- Mecánicas Originales -->
+          <div class="glass-card rounded-3xl p-6">
+            <h3 class="text-lg font-bold text-white mb-4">Mecánicas del Juego Original:</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm font-medium text-blue-100">
+              <div class="flex items-center gap-3">
+                <span class="w-7 h-7 rounded-full bg-pepsiElectric flex items-center justify-center text-white font-bold">✓</span>
+                <span>Corre automáticamente sin detenerse</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="w-7 h-7 rounded-full bg-pepsiElectric flex items-center justify-center text-white font-bold">✓</span>
+                <span>Esquiva obstáculos y tráfico urbano</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="w-7 h-7 rounded-full bg-pepsiElectric flex items-center justify-center text-white font-bold">✓</span>
+                <span>Recolecta latas de Pepsi en el camino</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="w-7 h-7 rounded-full bg-pepsiElectric flex items-center justify-center text-white font-bold">✓</span>
+                <span>Aumenta tu puntuación y llega a la meta</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ilustración Estilizada de Pepsiman Vectorial -->
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="glass-card rounded-3xl p-8 w-full max-w-md text-center relative overflow-hidden border-sky-400/30">
+            <div class="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-pepsiElectric/30 blur-3xl"></div>
+            <div class="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-pepsiRed/25 blur-3xl"></div>
+
+            <!-- Silueta heroica SVG de Pepsiman -->
+            <svg viewBox="0 0 260 300" class="w-56 h-64 mx-auto drop-shadow-[0_12px_25px_rgba(0,102,204,0.6)]">
+              <defs>
+                <linearGradient id="heroBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0077EE" />
+                  <stop offset="100%" stop-color="#002B6B" />
+                </linearGradient>
+                <linearGradient id="heroSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#F8FAFC" />
+                  <stop offset="50%" stop-color="#CBD5E1" />
+                  <stop offset="100%" stop-color="#64748B" />
+                </linearGradient>
+              </defs>
+              <!-- Cabeza plateada -->
+              <ellipse cx="130" cy="52" rx="24" ry="30" fill="url(#heroSilver)" />
+              <path d="M130 28 L130 76" stroke="#475569" stroke-width="2" opacity="0.5" />
+              <!-- Torso atlético bicolor -->
+              <path d="M85 95 C95 82, 165 82, 175 95 L165 185 L95 185 Z" fill="url(#heroBlue)" />
+              <path d="M85 95 C105 84, 145 84, 165 110 L125 165 L95 155 Z" fill="url(#heroSilver)" />
+              <!-- Emblema Pepsi en el pecho -->
+              <circle cx="130" cy="128" r="18" fill="#FFFFFF" />
+              <path d="M130 112 A16 16 0 0 0 114 128 C124 126 135 120 140 115 A16 16 0 0 0 130 112 Z" fill="#E32934" />
+              <path d="M143 119 C139 128 128 134 116 136 A16 16 0 0 0 143 119 Z" fill="#004B93" />
+              <!-- Brazos musculosos -->
+              <path d="M85 96 L52 145 L68 182 L86 174 L76 146 L96 118 Z" fill="url(#heroSilver)" />
+              <path d="M175 96 L208 145 L192 182 L174 174 L184 146 L164 118 Z" fill="url(#heroBlue)" />
+              <!-- Piernas en pose de carrera -->
+              <path d="M96 185 L84 275 L108 275 L124 210 Z" fill="url(#heroBlue)" />
+              <path d="M164 185 L182 268 L158 272 L136 210 Z" fill="url(#heroBlue)" />
+            </svg>
+
+            <div class="mt-4">
+              <div class="font-display font-black italic text-2xl text-white tracking-wider">PEPSIMAN</div>
+              <p class="text-xs sm:text-sm text-blue-200 mt-1">"Un juego único, divertido y lleno de Pepsi."</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       5. SECCIÓN INTERACTIVA — JUEGO 'PEPSI ARCADE' (CANVAS)
+       ========================================================= -->
+  <section id="arcade" class="py-20 md:py-28 bg-[#000F29] relative border-y border-white/10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Encabezado del Juego -->
+      <div class="text-center max-w-3xl mx-auto mb-10">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pepsiRed/20 border border-pepsiRed/50 text-red-300 text-xs font-bold uppercase tracking-widest mb-3">
+          🕹️ Nuestro Proyecto Web Jugable
+        </div>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-display font-black italic text-white mb-3">
+          PEPSI ARCADE
+        </h2>
+        <p class="text-blue-200 text-base sm:text-lg">
+          Inspirados en Pepsiman, creamos este juego web de carreras infinitas en HTML5 Canvas. ¡Esquiva camiones y barreras, salta, deslízate y recolecta todas las latas de Pepsi!
+        </p>
+      </div>
+
+      <!-- Marcadores e Instrucciones Rápidas -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Panel Lateral Izquierdo: Controles y Récord -->
+        <div class="lg:col-span-4 space-y-4">
+          <!-- Tarjeta de Puntuación y Récord -->
+          <div class="glass-card rounded-3xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-300">Estadísticas en vivo</span>
+              <button id="soundToggleBtn" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors" title="Activar/Desactivar sonido">
+                🔊 Sonido: ON
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-4 rounded-2xl bg-black/30 border border-white/10">
+                <div class="text-xs text-blue-300 mb-1">Puntuación</div>
+                <div id="scoreDisplay" class="text-2xl sm:text-3xl font-display font-black text-white">0</div>
+              </div>
+              <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-600/10 border border-amber-400/30">
+                <div class="text-xs text-amber-300 mb-1">🏆 Récord</div>
+                <div id="highScoreDisplay" class="text-2xl sm:text-3xl font-display font-black text-amber-300">0</div>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between text-xs text-blue-200 px-1">
+              <span>🥤 Latas recolectadas: <strong id="cansDisplay" class="text-white">0</strong></span>
+              <span>⚡ Velocidad: <strong id="speedDisplay" class="text-sky-300">1.0x</strong></span>
+            </div>
+          </div>
+
+          <!-- Guía de Controles -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="text-base font-bold text-white">¿Cómo jugar?</h3>
+            <div class="space-y-2.5 text-sm text-blue-100">
+              <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl">
+                <span>Cambiar de carril</span>
+                <span class="font-mono text-xs bg-white/15 px-2.5 py-1 rounded-lg text-white">← / → o A / D</span>
+              </div>
+              <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl">
+                <span>Saltar barreras</span>
+                <span class="font-mono text-xs bg-white/15 px-2.5 py-1 rounded-lg text-white">↑ / W / Espacio</span>
+              </div>
+              <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl">
+                <span>Deslizarse bajo señales</span>
+                <span class="font-mono text-xs bg-white/15 px-2.5 py-1 rounded-lg text-white">↓ / S</span>
+              </div>
+            </div>
+            <p class="text-xs text-blue-300 pt-1">
+              💡 En pantallas táctiles puedes deslizar (swipe) sobre el juego o usar los botones inferiores.
+            </p>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Contenedor del Canvas del Juego -->
+        <div class="lg:col-span-8 flex flex-col items-center">
+          <div id="canvasWrapper" class="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[520px] rounded-3xl overflow-hidden border-2 border-sky-400/40 shadow-[0_0_50px_rgba(0,102,204,0.4)] bg-[#03132E]">
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- Pantalla Superpuesta de Inicio / Game Over -->
+            <div id="gameOverlay" class="absolute inset-0 bg-[#001230]/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+              <div class="w-16 h-16 rounded-full bg-white p-1 shadow-lg mb-4">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                  <circle cx="50" cy="50" r="47" fill="#FFFFFF" />
+                  <path d="M50 7C26.25 7 7 26.25 7 50C7 53.6 7.45 57.08 8.28 60.41C35.2 54.6 62.5 36.8 75.8 15.6C68.5 10.2 59.6 7 50 7Z" fill="#E32934" />
+                  <path d="M84.6 24.4C74.5 47.9 47.2 65.1 13.7 72.1C21.1 84.6 34.6 93 50 93C73.75 93 93 73.75 93 50C93 40.3 89.8 31.4 84.6 24.4Z" fill="#004B93" />
+                </svg>
+              </div>
+
+              <h3 id="overlayTitle" class="font-display font-black italic text-2xl sm:text-4xl text-white mb-2">
+                ¡LISTO PARA CORRER!
+              </h3>
+              <p id="overlaySubtitle" class="text-blue-200 text-sm sm:text-base max-w-md mb-6">
+                Esquiva los camiones y obstáculos urbanos mientras recolectas latas de Pepsi para superar tu récord.
+              </p>
+
+              <button id="startGameBtn" class="px-8 py-4 rounded-full bg-gradient-to-r from-pepsiRed to-red-500 hover:from-red-500 hover:to-pepsiRed text-white font-display font-black text-base sm:text-lg tracking-wider shadow-xl shadow-red-600/40 transform hover:scale-105 active:scale-95 transition-all cursor-pointer">
+                ▶ JUGAR AHORA
+              </button>
+            </div>
+          </div>
+
+          <!-- Controles Táctiles / Botones Externos debajo del Canvas -->
+          <div class="w-full max-w-md mt-5 grid grid-cols-4 gap-3">
+            <button id="btnLeft" class="py-3.5 px-4 rounded-2xl bg-gradient-to-b from-pepsiElectric to-pepsiBlue hover:from-blue-500 hover:to-pepsiElectric active:scale-95 text-white font-bold text-xl shadow-lg border border-white/20 select-none" aria-label="Mover Izquierda">
+              ◀
+            </button>
+            <button id="btnJump" class="py-3.5 px-4 rounded-2xl bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 active:scale-95 text-white font-bold text-sm sm:text-base shadow-lg border border-white/20 select-none" aria-label="Saltar">
+              ▲ SALTAR
+            </button>
+            <button id="btnSlide" class="py-3.5 px-4 rounded-2xl bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 active:scale-95 text-white font-bold text-sm sm:text-base shadow-lg border border-white/20 select-none" aria-label="Deslizarse">
+              ▼ DESLIZAR
+            </button>
+            <button id="btnRight" class="py-3.5 px-4 rounded-2xl bg-gradient-to-b from-pepsiElectric to-pepsiBlue hover:from-blue-500 hover:to-pepsiElectric active:scale-95 text-white font-bold text-xl shadow-lg border border-white/20 select-none" aria-label="Mover Derecha">
+              ▶
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       6. TABLA COMPARATIVA ('DIFERENCIAS CLAVE')
+       ========================================================= -->
+  <section id="comparativa" class="py-20 md:py-28 bg-[#001230]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <div class="w-16 h-1.5 bg-pepsiRed rounded-full mx-auto mb-4"></div>
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-3">
+          Diferencias Clave
+        </h2>
+        <p class="text-blue-200 text-base sm:text-lg">
+          Comparamos el clásico original de 1999 con nuestra adaptación web moderna.
+        </p>
+      </div>
+
+      <!-- Tabla Responsiva -->
+      <div class="glass-card rounded-3xl overflow-hidden border border-sky-400/25 shadow-2xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gradient-to-r from-pepsiDark via-pepsiBlue to-pepsiDark border-b border-white/15">
+                <th class="py-5 px-6 text-sm sm:text-base font-bold uppercase tracking-wider text-sky-300">Característica</th>
+                <th class="py-5 px-6 text-sm sm:text-base font-extrabold text-white">Pepsiman Original (1999)</th>
+                <th class="py-5 px-6 text-sm sm:text-base font-extrabold text-amber-300">Nuestra Versión (Pepsi Arcade)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10 text-sm sm:text-base">
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="py-4 px-6 font-bold text-blue-200">Plataforma</td>
+                <td class="py-4 px-6 text-white">Consola PlayStation (PS1)</td>
+                <td class="py-4 px-6 text-emerald-300 font-semibold">Navegador Web (PC y Móvil)</td>
+              </tr>
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="py-4 px-6 font-bold text-blue-200">Gráficos</td>
+                <td class="py-4 px-6 text-white">3D Clásico de 1999</td>
+                <td class="py-4 px-6 text-emerald-300 font-semibold">2D Arcade Moderno en Canvas</td>
+              </tr>
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="py-4 px-6 font-bold text-blue-200">Jugabilidad</td>
+                <td class="py-4 px-6 text-white">Carreras, acción e historia completa</td>
+                <td class="py-4 px-6 text-emerald-300 font-semibold">Carreras infinitas, salto, deslizamiento y récord</td>
+              </tr>
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="py-4 px-6 font-bold text-blue-200">Acceso</td>
+                <td class="py-4 px-6 text-white">Disco físico en consola</td>
+                <td class="py-4 px-6 text-emerald-300 font-semibold">Gratis e inmediato en línea (GitHub Pages)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="bg-pepsiBlue/30 py-4 px-6 text-center text-amber-300 font-bold italic text-sm sm:text-base border-t border-white/10">
+          "La misma esencia, una nueva forma de disfrutarlo."
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       7. IMPACTO CULTURAL, CONCLUSIÓN Y FUENTES
+       ========================================================= -->
+  <section id="impacto" class="py-20 md:py-28 bg-gradient-to-b from-[#001230] to-[#001B44] relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <!-- Bloque Impacto Cultural y Conclusión -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Impacto y Legado -->
+        <div class="glass-card rounded-3xl p-8 md:p-10 flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-1.5 bg-pepsiRed rounded-full mb-4"></div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-4">Impacto Cultural y Legado</h2>
+            <p class="text-blue-100 text-base sm:text-lg leading-relaxed">
+              Pepsiman se convirtió en un verdadero <strong class="text-white">ícono de los videojuegos y de la cultura pop</strong>, demostrando el poder de la creatividad de Pepsi para conectar con nuevas generaciones a través del humor, la música y el entretenimiento interactivo.
+            </p>
+          </div>
+          <div class="mt-8 flex items-center gap-3 text-sky-300 font-semibold text-sm">
+            <span class="px-3 py-1 rounded-full bg-white/10">#Pepsiman</span>
+            <span class="px-3 py-1 rounded-full bg-white/10">#CulturaPop</span>
+            <span class="px-3 py-1 rounded-full bg-white/10">#GamingRetro</span>
+          </div>
+        </div>
+
+        <!-- Conclusión -->
+        <div class="glass-card rounded-3xl p-8 md:p-10 flex flex-col justify-between bg-gradient-to-br from-pepsiElectric/25 to-pepsiDark">
+          <div>
+            <div class="w-14 h-1.5 bg-sky-400 rounded-full mb-4"></div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-4">Conclusión</h2>
+            <p class="text-blue-100 text-base sm:text-lg leading-relaxed">
+              Pepsi es historia, innovación y una conexión única con sus consumidores. Desde su fundación en <strong class="text-white">1893</strong> hasta <strong class="text-white">Pepsiman</strong> y nuestro proyecto <strong class="text-white">Pepsi Arcade</strong>, la marca demuestra cómo trascender combinando bebida, entretenimiento y tecnología.
+            </p>
+          </div>
+          <div class="mt-8 pt-6 border-t border-white/15 flex items-center justify-between">
+            <span class="font-display font-black italic text-2xl text-white">LIVE FOR NOW</span>
+            <span class="text-xs text-blue-200">¡Gracias por vivir la experiencia!</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de Fuentes -->
+      <div id="fuentes" class="glass-card rounded-3xl p-8 md:p-10">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div>
+            <div class="w-12 h-1.5 bg-pepsiRed rounded-full mb-3"></div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-white">Fuentes y Referencias</h3>
+            <p class="text-blue-200 text-sm mt-1">Documentación utilizada para la elaboración de este proyecto.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a href="https://www.pepsico.com" target="_blank" rel="noopener noreferrer" class="p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all group">
+            <div class="text-sky-400 text-lg mb-2">🔗</div>
+            <div class="font-bold text-white group-hover:text-sky-300 transition-colors">PepsiCo Sitio Oficial</div>
+            <div class="text-xs text-blue-300 mt-1">www.pepsico.com</div>
+          </a>
+
+          <a href="https://www.pepsi.com" target="_blank" rel="noopener noreferrer" class="p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all group">
+            <div class="text-sky-400 text-lg mb-2">🔗</div>
+            <div class="font-bold text-white group-hover:text-sky-300 transition-colors">Historia de Pepsi</div>
+            <div class="text-xs text-blue-300 mt-1">www.pepsi.com</div>
+          </a>
+
+          <div class="p-5 rounded-2xl bg-white/5 border border-white/10">
+            <div class="text-pepsiRed text-lg mb-2">🎮</div>
+            <div class="font-bold text-white">Pepsiman (1999)</div>
+            <div class="text-xs text-blue-300 mt-1">KID • PlayStation</div>
+          </div>
+
+          <a href="#arcade" class="p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all group">
+            <div class="text-emerald-400 text-lg mb-2">💻</div>
+            <div class="font-bold text-white group-hover:text-emerald-300 transition-colors">Proyecto Pepsi Arcade</div>
+            <div class="text-xs text-blue-300 mt-1">HTML5 Canvas & JavaScript</div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-[#000B1E] border-t border-white/10 py-8 text-center text-xs sm:text-sm text-blue-300">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-display font-black italic text-white text-base">PEPSI ARCADE</span>
+        <span>• Proyecto Web Interactivo</span>
+      </div>
+      <div>
+        Inspirado en la presentación <em>Pepsi_Cuadros_Nitidos</em> • Listo para GitHub Pages
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================
+       SCRIPTS: MENÚ, BURBUJAS Y MOTOR DEL JUEGO 'PEPSI ARCADE'
+       ========================================================= -->
+  <script>
+    /**
+     * 1. NAVEGACIÓN MÓVIL Y BURBUJAS DECORATIVAS
+     */
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileLinks = document.querySelectorAll('.mobile-link');
+
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    mobileLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+      });
+    });
+
+    // Generar burbujas efervescentes en la sección Hero
+    function createBubbles() {
+      const container = document.getElementById('bubblesContainer');
+      if (!container) return;
+      const bubbleCount = 24;
+      for (let i = 0; i < bubbleCount; i++) {
+        const bubble = document.createElement('span');
+        bubble.classList.add('bubble');
+        const size = Math.random() * 18 + 6; // 6px a 24px
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.animationDuration = `${Math.random() * 6 + 5}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        container.appendChild(bubble);
+      }
+    }
+    createBubbles();
+
+    /**
+     * 2. MOTOR DEL VIDEOJUEGO 'PEPSI ARCADE' (HTML5 CANVAS)
+     */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
+    // Elementos de interfaz del juego
+    const gameOverlay = document.getElementById('gameOverlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlaySubtitle = document.getElementById('overlaySubtitle');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const highScoreDisplay = document.getElementById('highScoreDisplay');
+    const cansDisplay = document.getElementById('cansDisplay');
+    const speedDisplay = document.getElementById('speedDisplay');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+
+    // Estado de sonido con Tone.js (sintetizador limpio sin URLs externas)
+    let soundEnabled = true;
+    let synth = null;
+
+    function initAudio() {
+      try {
+        if (!synth && typeof Tone !== 'undefined') {
+          synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          synth.volume.value = -8;
+        }
+      } catch (e) {
+        console.warn('Audio no inicializado:', e);
+      }
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!synth) return;
+        if (Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        const now = Tone.now();
+        if (type === 'can') {
+          synth.triggerAttackRelease('C6', '16n', now);
+          synth.triggerAttackRelease('E6', '16n', now + 0.06);
+        } else if (type === 'jump') {
+          synth.triggerAttackRelease('G4', '16n', now);
+          synth.triggerAttackRelease('D5', '16n', now + 0.05);
+        } else if (type === 'slide') {
+          synth.triggerAttackRelease('E4', '16n', now);
+          synth.triggerAttackRelease('B3', '16n', now + 0.05);
+        } else if (type === 'crash') {
+          synth.triggerAttackRelease(['C3', 'F#3', 'A#3'], '4n', now);
+        }
+      } catch (err) {
+        // Ignorar errores de bloqueo de autoplay
+      }
+    }
+
+    soundToggleBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      soundToggleBtn.textContent = soundEnabled ? '🔊 Sonido: ON' : '🔇 Sonido: OFF';
+    });
+
+    // Variables del juego
+    let highScore = parseInt(localStorage.getItem('pepsiArcadeHighScore') || '0', 10);
+    highScoreDisplay.textContent = highScore;
+
+    let isRunning = false;
+    let animationId = null;
+    let score = 0;
+    let cansCollected = 0;
+    let gameSpeed = 5.5;
+    let roadOffset = 0;
+    let spawnTimer = 0;
+    let particles = [];
+
+    // Jugador (Pepsiman)
+    const player = {
+      lane: 1, // 0 = izquierda, 1 = centro, 2 = derecha
+      visualLane: 1,
+      isJumping: false,
+      jumpTimer: 0,
+      jumpDuration: 36,
+      isSliding: false,
+      slideTimer: 0,
+      slideDuration: 34,
+      runCycle: 0,
+    };
+
+    // Entidades en pista (obstáculos y latas)
+    let entities = [];
+
+    // Ajustar tamaño del canvas responsivamente
+    function resizeCanvas() {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (!isRunning) {
+        drawScene();
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Proyección de perspectiva 2.5D estilo Pepsiman (PS1)
+    function projectLane(laneIndex, progressY, width, height) {
+      // progressY: 0 (horizonte) -> 1 (primer plano cerca del jugador)
+      const horizonY = height * 0.34;
+      const y = horizonY + (height - horizonY) * Math.pow(progressY, 1.35);
+
+      const topRoadHalf = width * 0.11;
+      const bottomRoadHalf = width * 0.44;
+      const roadHalf = topRoadHalf + (bottomRoadHalf - topRoadHalf) * Math.pow(progressY, 1.25);
+
+      // Posición X según carril (-1, 0, +1)
+      const laneOffsetFactor = (laneIndex - 1) * 0.62;
+      const x = width * 0.5 + roadHalf * laneOffsetFactor;
+      const scale = 0.25 + 0.85 * Math.pow(progressY, 1.2);
+
+      return { x, y, scale, roadHalf };
+    }
+
+    // Acciones del jugador
+    function moveLeft() {
+      if (!isRunning) return;
+      if (player.lane > 0) player.lane--;
+    }
+
+    function moveRight() {
+      if (!isRunning) return;
+      if (player.lane < 2) player.lane++;
+    }
+
+    function jump() {
+      if (!isRunning) return;
+      if (!player.isJumping) {
+        player.isJumping = true;
+        player.jumpTimer = player.jumpDuration;
+        player.isSliding = false;
+        playSound('jump');
+      }
+    }
+
+    function slide() {
+      if (!isRunning) return;
+      if (!player.isSliding) {
+        player.isSliding = true;
+        player.slideTimer = player.slideDuration;
+        player.isJumping = false;
+        playSound('slide');
+      }
+    }
+
+    // Controles por teclado
+    window.addEventListener('keydown', (e) => {
+      if (!isRunning) return;
+      const key = e.key.toLowerCase();
+      if (key === 'arrowleft' || key === 'a') {
+        e.preventDefault();
+        moveLeft();
+      } else if (key === 'arrowright' || key === 'd') {
+        e.preventDefault();
+        moveRight();
+      } else if (key === 'arrowup' || key === 'w' || e.code === 'Space') {
+        e.preventDefault();
+        jump();
+      } else if (key === 'arrowdown' || key === 's') {
+        e.preventDefault();
+        slide();
+      }
+    });
+
+    // Controles táctiles (botones externos)
+    document.getElementById('btnLeft').addEventListener('click', moveLeft);
+    document.getElementById('btnRight').addEventListener('click', moveRight);
+    document.getElementById('btnJump').addEventListener('click', jump);
+    document.getElementById('btnSlide').addEventListener('click', slide);
+
+    // Controles por gesto Swipe directamente en el Canvas
+    let touchStartX = 0;
+    let touchStartY = 0;
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', (e) => {
+      if (!isRunning || e.changedTouches.length === 0) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 25) moveRight();
+        else if (dx < -25) moveLeft();
+      } else {
+        if (dy < -25) jump();
+        else if (dy > 25) slide();
+      }
+    }, { passive: true });
+
+    // Generar oleadas de latas y obstáculos
+    function spawnWave() {
+      const lanes = [0, 1, 2];
+      // Elegir un carril seguro con latas de Pepsi
+      const safeLane = lanes[Math.floor(Math.random() * lanes.length)];
+      entities.push({
+        type: 'can',
+        lane: safeLane,
+        progress: 0.02,
+        collected: false,
+      });
+
+      // Generar 1 o 2 obstáculos en los otros carriles
+      const obstacleTypes = ['barrier', 'highSign', 'truck'];
+      const otherLanes = lanes.filter((l) => l !== safeLane);
+      const count = Math.random() < 0.45 ? 2 : 1;
+
+      for (let i = 0; i < count; i++) {
+        const chosenLane = otherLanes[i];
+        const obsType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+        entities.push({
+          type: obsType,
+          lane: chosenLane,
+          progress: 0.02,
+        });
+      }
+    }
+
+    // Crear partículas al recoger latas
+    function spawnParticles(x, y, color) {
+      for (let i = 0; i < 12; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 7,
+          vy: (Math.random() - 0.8) * 7,
+          life: 22,
+          color,
+        });
+      }
+    }
+
+    // Iniciar o reiniciar partida
+    function startGame() {
+      initAudio();
+      isRunning = true;
+      score = 0;
+      cansCollected = 0;
+      gameSpeed = 5.5;
+      spawnTimer = 0;
+      entities = [];
+      particles = [];
+
+      player.lane = 1;
+      player.visualLane = 1;
+      player.isJumping = false;
+      player.isSliding = false;
+
+      scoreDisplay.textContent = '0';
+      cansDisplay.textContent = '0';
+      speedDisplay.textContent = '1.0x';
+      gameOverlay.classList.add('hidden');
+
+      if (animationId) cancelAnimationFrame(animationId);
+      gameLoop();
+    }
+
+    startGameBtn.addEventListener('click', startGame);
+
+    function endGame() {
+      isRunning = false;
+      playSound('crash');
+
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('pepsiArcadeHighScore', String(highScore));
+        highScoreDisplay.textContent = highScore;
+      }
+
+      overlayTitle.textContent = '¡IMPACTO EN LA PISTA!';
+      overlaySubtitle.innerHTML = `Puntuación final: <strong class="text-white text-xl">${score} pts</strong> • Latas: <strong class="text-sky-300">${cansCollected}</strong>`;
+      startGameBtn.textContent = '↻ VOLVER A JUGAR';
+      gameOverlay.classList.remove('hidden');
+    }
+
+    // Actualización lógica por frame
+    function updateGame() {
+      // Incrementar dificultad progresivamente
+      gameSpeed = Math.min(13.5, gameSpeed + 0.0018);
+      score += 1;
+      scoreDisplay.textContent = score;
+      speedDisplay.textContent = `${(gameSpeed / 5.5).toFixed(1)}x`;
+
+      roadOffset = (roadOffset + gameSpeed * 2.2) % 60;
+      player.runCycle += 0.22;
+
+      // Suavizar transición lateral de carril
+      player.visualLane += (player.lane - player.visualLane) * 0.22;
+
+      // Temporizadores de salto y deslizamiento
+      if (player.isJumping) {
+        player.jumpTimer--;
+        if (player.jumpTimer <= 0) player.isJumping = false;
+      }
+      if (player.isSliding) {
+        player.slideTimer--;
+        if (player.slideTimer <= 0) player.isSliding = false;
+      }
+
+      // Generación periódica de obstáculos y latas
+      spawnTimer += gameSpeed;
+      if (spawnTimer > 210) {
+        spawnWave();
+        spawnTimer = 0;
+      }
+
+      const width = canvasWrapper.clientWidth;
+      const height = canvasWrapper.clientHeight;
+
+      // Actualizar entidades y detectar colisiones
+      for (let i = entities.length - 1; i >= 0; i--) {
+        const ent = entities[i];
+        ent.progress += gameSpeed * 0.0022;
+
+        // Zona de colisión cerca del jugador (progress ~ 0.86 a 0.94)
+        if (ent.progress >= 0.85 && ent.progress <= 0.94 && Math.abs(player.visualLane - ent.lane) < 0.42) {
+          if (ent.type === 'can' && !ent.collected) {
+            ent.collected = true;
+            cansCollected++;
+            score += 50;
+            cansDisplay.textContent = cansCollected;
+            scoreDisplay.textContent = score;
+            playSound('can');
+            const proj = projectLane(ent.lane, ent.progress, width, height);
+            spawnParticles(proj.x, proj.y - 20, '#38BDF8');
+            entities.splice(i, 1);
+            continue;
+          } else if (ent.type === 'barrier') {
+            // Se esquiva saltando
+            if (!player.isJumping) {
+              endGame();
+              return;
+            }
+          } else if (ent.type === 'highSign') {
+            // Se esquiva deslizándose por debajo
+            if (!player.isSliding) {
+              endGame();
+              return;
+            }
+          } else if (ent.type === 'truck') {
+            // Camión alto: requiere cambiar de carril
+            endGame();
+            return;
+          }
+        }
+
+        if (ent.progress > 1.12) {
+          entities.splice(i, 1);
+        }
+      }
+
+      // Actualizar partículas
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    // Dibujo completo de la escena en Canvas
+    function drawScene() {
+      const width = canvasWrapper.clientWidth;
+      const height = canvasWrapper.clientHeight;
+      const horizonY = height * 0.34;
+
+      // 1. Cielo degradado vibrante estilo Pepsi
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+      skyGrad.addColorStop(0, '#001538');
+      skyGrad.addColorStop(0.6, '#004B93');
+      skyGrad.addColorStop(1, '#0088FF');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, width, horizonY);
+
+      // Silueta de ciudad futurista en el horizonte
+      ctx.fillStyle = '#002459';
+      const buildings = [0.06, 0.14, 0.22, 0.31, 0.68, 0.76, 0.84, 0.92];
+      buildings.forEach((bx, idx) => {
+        const bw = width * 0.055;
+        const bh = height * (0.09 + (idx % 3) * 0.045);
+        ctx.fillRect(width * bx - bw / 2, horizonY - bh, bw, bh);
+      });
+
+      // 2. Suelo / Aceras laterales
+      ctx.fillStyle = '#07224D';
+      ctx.fillRect(0, horizonY, width, height - horizonY);
+
+      // 3. Carretera en perspectiva
+      const topHalf = width * 0.11;
+      const bottomHalf = width * 0.44;
+      ctx.fillStyle = '#1E293B';
+      ctx.beginPath();
+      ctx.moveTo(width * 0.5 - topHalf, horizonY);
+      ctx.lineTo(width * 0.5 + topHalf, horizonY);
+      ctx.lineTo(width * 0.5 + bottomHalf, height);
+      ctx.lineTo(width * 0.5 - bottomHalf, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // Bordes rojo y azul de la pista
+      ctx.strokeStyle = '#E32934';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(width * 0.5 - topHalf, horizonY);
+      ctx.lineTo(width * 0.5 - bottomHalf, height);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#0077EE';
+      ctx.beginPath();
+      ctx.moveTo(width * 0.5 + topHalf, horizonY);
+      ctx.lineTo(width * 0.5 + bottomHalf, height);
+      ctx.stroke();
+
+      // Líneas divisorias de los 3 carriles
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([18, 22]);
+      ctx.lineDashOffset = -roadOffset;
+
+      [-0.31, 0.31].forEach((divider) => {
+        ctx.beginPath();
+        ctx.moveTo(width * 0.5 + topHalf * divider, horizonY);
+        ctx.lineTo(width * 0.5 + bottomHalf * divider, height);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      // Ordenar entidades por profundidad (de lejos a cerca)
+      const sortedEntities = [...entities].sort((a, b) => a.progress - b.progress);
+
+      sortedEntities.forEach((ent) => {
+        const { x, y, scale } = projectLane(ent.lane, ent.progress, width, height);
+
+        if (ent.type === 'can') {
+          // Lata de Pepsi coleccionable con aura brillante
+          const cw = 24 * scale;
+          const ch = 40 * scale;
+
+          ctx.save();
+          ctx.shadowColor = '#38BDF8';
+          ctx.shadowBlur = 14;
+          // Cuerpo azul
+          ctx.fillStyle = '#0055B8';
+          ctx.beginPath();
+          ctx.roundRect(x - cw / 2, y - ch, cw, ch, 5 * scale);
+          ctx.fill();
+          // Tapas plateadas
+          ctx.fillStyle = '#E2E8F0';
+          ctx.fillRect(x - cw / 2, y - ch, cw, 4 * scale);
+          ctx.fillRect(x - cw / 2, y - 4 * scale, cw, 4 * scale);
+          // Esfera Pepsi
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(x, y - ch * 0.5, cw * 0.36, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#E32934';
+          ctx.beginPath();
+          ctx.arc(x, y - ch * 0.52, cw * 0.28, Math.PI, 0);
+          ctx.fill();
+          ctx.restore();
+        } else if (ent.type === 'barrier') {
+          // Barrera vial baja (se esquiva saltando)
+          const bw = 66 * scale;
+          const bh = 28 * scale;
+          ctx.fillStyle = '#E32934';
+          ctx.beginPath();
+          ctx.roundRect(x - bw / 2, y - bh, bw, bh, 4 * scale);
+          ctx.fill();
+          // Franjas blancas de advertencia
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(x - bw * 0.35, y - bh * 0.72, bw * 0.22, bh * 0.44);
+          ctx.fillRect(x + bw * 0.13, y - bh * 0.72, bw * 0.22, bh * 0.44);
+        } else if (ent.type === 'highSign') {
+          // Señal elevada (se esquiva deslizándose por debajo)
+          const sw = 72 * scale;
+          const postH = 68 * scale;
+          const boardH = 26 * scale;
+          // Postes laterales
+          ctx.fillStyle = '#94A3B8';
+          ctx.fillRect(x - sw / 2, y - postH, 5 * scale, postH);
+          ctx.fillRect(x + sw / 2 - 5 * scale, y - postH, 5 * scale, postH);
+          // Cartel superior amarillo/azul
+          ctx.fillStyle = '#F59E0B';
+          ctx.beginPath();
+          ctx.roundRect(x - sw / 2, y - postH, sw, boardH, 4 * scale);
+          ctx.fill();
+        } else if (ent.type === 'truck') {
+          // Camión de reparto alto (cambiar de carril)
+          const tw = 76 * scale;
+          const th = 78 * scale;
+          // Caja del camión
+          ctx.fillStyle = '#F8FAFC';
+          ctx.beginPath();
+          ctx.roundRect(x - tw / 2, y - th, tw, th * 0.85, 6 * scale);
+          ctx.fill();
+          // Franja azul Pepsi en el camión
+          ctx.fillStyle = '#004B93';
+          ctx.fillRect(x - tw / 2, y - th * 0.55, tw, th * 0.28);
+          // Luces traseras rojas
+          ctx.fillStyle = '#E32934';
+          ctx.fillRect(x - tw * 0.42, y - th * 0.22, 12 * scale, 7 * scale);
+          ctx.fillRect(x + tw * 0.42 - 12 * scale, y - th * 0.22, 12 * scale, 7 * scale);
+        }
+      });
+
+      // 4. Dibujar al corredor (Pepsiman) en primer plano
+      const pProj = projectLane(player.visualLane, 0.89, width, height);
+      let jumpOffsetY = 0;
+      if (player.isJumping) {
+        const t = 1 - player.jumpTimer / player.jumpDuration;
+        jumpOffsetY = Math.sin(t * Math.PI) * 72;
+      }
+
+      const px = pProj.x;
+      const py = pProj.y - jumpOffsetY;
+      const pScale = player.isSliding ? 0.55 : 1.0;
+
+      // Sombra en el suelo
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(px, pProj.y + 4, 22, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(1, pScale);
+
+      // Piernas animadas corriendo
+      const legSwing = Math.sin(player.runCycle) * 10;
+      ctx.fillStyle = '#004B93';
+      ctx.fillRect(-12, -34 + legSwing * 0.4, 9, 32);
+      ctx.fillRect(3, -34 - legSwing * 0.4, 9, 32);
+
+      // Torso bicolor plateado y azul
+      ctx.fillStyle = '#0066CC';
+      ctx.beginPath();
+      ctx.roundRect(-16, -68, 32, 38, 8);
+      ctx.fill();
+
+      ctx.fillStyle = '#E2E8F0';
+      ctx.beginPath();
+      ctx.moveTo(-16, -68);
+      ctx.lineTo(12, -68);
+      ctx.lineTo(-16, -38);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cabeza plateada brillante
+      ctx.fillStyle = '#F1F5F9';
+      ctx.beginPath();
+      ctx.arc(0, -80, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      // 5. Dibujar partículas de destellos
+      particles.forEach((p) => {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // Bucle principal de animación
+    function gameLoop() {
+      if (!isRunning) return;
+      updateGame();
+      drawScene();
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // Inicializar escena al cargar la ventana
+    window.onload = function () {
+      resizeCanvas();
+      drawScene();
+    };
+  </script>
+</body>
+</html>
